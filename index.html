@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EMPIRE Discord Webhook Sender</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #0d0e12;
+    color: #e1e1e6;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Top Navigation Bar */
+  header {
+    background: #16171d;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #272932;
+  }
+
+  .brand-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .discord-icon-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+  }
+
+  .discord-icon-link img {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #5865f2;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .discord-icon-link img:hover {
+    transform: scale(1.1);
+    border-color: #7289da;
+  }
+
+  .brand {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #7289da;
+    letter-spacing: 1px;
+  }
+
+  .logged-in-status {
+    font-size: 0.8rem;
+    color: #43b581;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logout-btn {
+    background: #f04747;
+    border: none;
+    color: #fff;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .logout-btn:hover {
+    background: #d03737;
+  }
+
+  /* Main Layout */
+  .container {
+    max-width: 900px;
+    width: 100%;
+    margin: 20px auto;
+    padding: 0 15px;
+    flex: 1;
+  }
+
+  .card {
+    background: #16171d;
+    border: 1px solid #272932;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  h2 {
+    margin-top: 0;
+    font-size: 1.2rem;
+    color: #fff;
+    border-bottom: 1px solid #272932;
+    padding-bottom: 8px;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 15px;
+  }
+
+  .form-row .form-group {
+    flex: 1;
+  }
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+    color: #a3a6af;
+    font-weight: 600;
+  }
+
+  /* Webhook Row with Clear Button */
+  .url-input-container {
+    display: flex;
+    gap: 8px;
+  }
+
+  .clear-url-btn {
+    background: #f04747;
+    color: #fff;
+    border: none;
+    padding: 0 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .clear-url-btn:hover {
+    background: #d03737;
+  }
+
+  input[type="text"], input[type="number"], input[type="password"], input[type="url"], select, textarea {
+    width: 100%;
+    background: #0d0e12;
+    border: 1px solid #272932;
+    color: #fff;
+    padding: 10px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+
+  input[type="file"] {
+    background: #0d0e12;
+    border: 1px solid #272932;
+    color: #a3a6af;
+    padding: 8px;
+    border-radius: 6px;
+    width: 100%;
+    font-size: 0.85rem;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  .sub-text {
+    font-size: 0.75rem;
+    color: #72767d;
+    margin-top: 4px;
+  }
+
+  button.send-btn {
+    width: 100%;
+    background: #5865f2;
+    border: none;
+    color: #fff;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  button.send-btn:hover {
+    background: #4752c4;
+  }
+
+  button.send-btn:disabled {
+    background: #3c45a5;
+    cursor: not-allowed;
+  }
+
+  /* Progress Job Card */
+  .job-card {
+    display: none;
+    background: #0d0e12;
+    border: 1px solid #272932;
+    border-radius: 6px;
+    padding: 12px 15px;
+    margin-top: 15px;
+  }
+
+  .job-title {
+    font-weight: bold;
+    color: #fff;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+  }
+
+  .job-status {
+    font-size: 0.8rem;
+    color: #00b0f4;
+  }
+
+  /* History Area (Protected) */
+  #historySection {
+    display: none;
+  }
+
+  .history-item {
+    background: #0d0e12;
+    border-left: 3px solid #5865f2;
+    padding: 12px 15px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+  }
+
+  .history-meta {
+    font-size: 0.75rem;
+    color: #72767d;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .history-content {
+    margin-bottom: 6px;
+    white-space: pre-wrap;
+  }
+
+  .history-webhook {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px dashed #272932;
+    font-size: 0.75rem;
+    color: #00b0f4;
+    word-break: break-all;
+  }
+
+  .history-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .resend-btn {
+    background: #43b581;
+    border: none;
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: bold;
+  }
+
+  .resend-btn:hover {
+    background: #3ca374;
+  }
+
+  .clear-btn {
+    background: transparent;
+    border: 1px solid #f04747;
+    color: #f04747;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    float: right;
+  }
+
+  .clear-btn:hover {
+    background: #f04747;
+    color: #fff;
+  }
+
+  .status-msg {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  .status-success { color: #43b581; }
+  .status-error { color: #f04747; }
+  .status-info { color: #00b0f4; }
+
+  /* Footer & Secret Link */
+  footer {
+    text-align: center;
+    padding: 15px;
+    font-size: 0.75rem;
+    color: #72767d;
+    border-top: 1px solid #16171d;
+    margin-top: auto;
+  }
+
+  .secret-trigger {
+    color: #72767d;
+    cursor: pointer;
+    text-decoration: none;
+    user-select: none;
+    transition: color 0.2s;
+  }
+
+  .secret-trigger:hover {
+    color: #a3a6af;
+  }
+
+  /* Hidden Modal Popup */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .modal-card {
+    background: #16171d;
+    border: 1px solid #272932;
+    border-radius: 8px;
+    padding: 25px;
+    width: 100%;
+    max-width: 350px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  .modal-card h3 {
+    margin-top: 0;
+    font-size: 1.1rem;
+    color: #fff;
+    margin-bottom: 15px;
+    text-align: center;
+  }
+
+  .close-modal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    color: #a3a6af;
+    cursor: pointer;
+    font-size: 1.2rem;
+  }
+
+  .close-modal:hover { color: #fff; }
+
+  .modal-card button {
+    width: 100%;
+    background: #5865f2;
+    border: none;
+    color: #fff;
+    padding: 10px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .modal-card button:hover { background: #4752c4; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-container">
+    <a href="https://discord.gg/empirexe" target="_blank" class="discord-icon-link" title="Join EMPIRE Discord">
+      <img src="https://files.catbox.moe/ec4zqx.gif" alt="EMPIRE Discord">
+    </a>
+    <div class="brand">EMPIRE Webhook Sender</div>
+  </div>
+  
+  <div id="authArea"></div>
+</header>
+
+<div class="container">
+  <div class="card">
+    <h2>EMPIRE Discord Webhook Sender</h2>
+    <div class="sub-text" style="margin-bottom: 15px;">Send messages and files with your <b>EMPIRE</b> Discord webhook.</div>
+
+    <form id="webhookForm" onsubmit="sendMessage(event)">
+      <!-- 1. WEBHOOK URL -->
+      <div class="form-group">
+        <label for="webhookUrl">WEBHOOK URL</label>
+        <div class="url-input-container">
+          <input type="url" id="webhookUrl" placeholder="https://discord.com/api/webhooks/..." required>
+          <button type="button" class="clear-url-btn" onclick="clearWebhookUrl()">Clear</button>
+        </div>
+      </div>
+
+      <!-- 2. MESSAGE -->
+      <div class="form-group">
+        <label for="messageContent">MESSAGE</label>
+        <textarea id="messageContent" placeholder="Write your message..." required></textarea>
+      </div>
+
+      <!-- 3. PHOTO / FILE (OPTIONAL) -->
+      <div class="form-group">
+        <label for="imageFile">PHOTO / FILE (OPTIONAL)</label>
+        <input type="file" id="imageFile" accept="image/*,video/*" multiple>
+        <div class="sub-text">You can select multiple photos/videos/files at once.</div>
+      </div>
+
+      <!-- 4. REPEAT COUNT -->
+      <div class="form-group">
+        <label for="repeatCount">REPEAT COUNT</label>
+        <select id="repeatCount">
+          <option value="1">1 time</option>
+          <option value="5">5 times</option>
+          <option value="10">10 times</option>
+          <option value="20">20 times</option>
+          <option value="50">50 times</option>
+          <option value="100">100 times</option>
+        </select>
+      </div>
+
+      <!-- 5. DELAY (Same line number input & unit) -->
+      <div class="form-group">
+        <label>DELAY</label>
+        <div class="form-row">
+          <input type="number" id="delayValue" value="0" min="0" placeholder="0">
+          <select id="delayUnit">
+            <option value="1">Seconds</option>
+            <option value="60">Minutes</option>
+            <option value="3600">Hours</option>
+          </select>
+        </div>
+        <div class="sub-text">Choose a delay value and unit. Example: 5 Minutes or 2 Hours.</div>
+      </div>
+
+      <!-- SEND BUTTON -->
+      <button type="submit" class="send-btn" id="submitBtn">Send</button>
+    </form>
+
+    <!-- LIVE PROGRESS BOX -->
+    <div id="jobCard" class="job-card">
+      <div class="job-title" id="jobTitle">Send job</div>
+      <div class="job-status" id="jobStatus">Sending 0/0...</div>
+    </div>
+
+    <div id="statusMsg" class="status-msg"></div>
+
+    <div class="sub-text" style="margin-top: 15px; text-align: center;">
+      Keep your webhook URL private. Multiple <b>EMPIRE</b> send jobs can run independently from the same page. Discord rate limits still apply.
+    </div>
+  </div>
+
+  <div class="card" id="historySection">
+    <h2>
+      Free Cloud History (Owner Only)
+      <button class="clear-btn" onclick="clearHistory()">Clear History</button>
+    </h2>
+    <div id="historyList"></div>
+  </div>
+</div>
+
+<footer>
+  Powered by <span class="secret-trigger" onclick="openLoginModal()">empire</span>
+</footer>
+
+<!-- Hidden Login Modal -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal-card">
+    <span class="close-modal" onclick="closeLoginModal()">&times;</span>
+    <h3>Owner Access</h3>
+    <form onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label for="loginUser">Username</label>
+        <input type="text" id="loginUser" placeholder="Username" required>
+      </div>
+      <div class="form-group">
+        <label for="loginPass">Password</label>
+        <input type="password" id="loginPass" placeholder="Password" required>
+      </div>
+      <button type="submit">Access Audits</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const FIREBASE_DB_URL = 'https://empire-sender-default-rtdb.firebaseio.com/history.json';
+
+  let localCacheHistory = [];
+
+  window.onload = function() {
+    if (sessionStorage.getItem('empire_logged_in') === 'true') {
+      renderLoggedInUI();
+    }
+  };
+
+  function openLoginModal() {
+    document.getElementById('loginModal').style.display = 'flex';
+  }
+
+  function closeLoginModal() {
+    document.getElementById('loginModal').style.display = 'none';
+  }
+
+  function clearWebhookUrl() {
+    document.getElementById('webhookUrl').value = '';
+  }
+
+  function handleLogin(e) {
+    e.preventDefault();
+    const user = document.getElementById('loginUser').value;
+    const pass = document.getElementById('loginPass').value;
+
+    if (user === 'rafixyempire' && pass === 'rafi.gg/empirexe') {
+      sessionStorage.setItem('empire_logged_in', 'true');
+      closeLoginModal();
+      renderLoggedInUI();
+    } else {
+      alert('Invalid Owner Credentials!');
+    }
+  }
+
+  function handleLogout() {
+    sessionStorage.removeItem('empire_logged_in');
+    location.reload();
+  }
+
+  function renderLoggedInUI() {
+    document.getElementById('authArea').innerHTML = `
+      <div class="logged-in-status">
+        <span>Logged in as <b>rafixyempire</b></span>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+      </div>
+    `;
+    document.getElementById('historySection').style.display = 'block';
+    loadHistoryFromCloud();
+  }
+
+  async function sendMessage(e) {
+    e.preventDefault();
+    const url = document.getElementById('webhookUrl').value;
+    const content = document.getElementById('messageContent').value;
+    const repeatCount = parseInt(document.getElementById('repeatCount').value, 10);
+    
+    const delayVal = parseFloat(document.getElementById('delayValue').value) || 0;
+    const delayUnit = parseInt(document.getElementById('delayUnit').value, 10);
+    const delayMs = delayVal * delayUnit * 1000;
+
+    const fileInput = document.getElementById('imageFile');
+    const statusMsg = document.getElementById('statusMsg');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const jobCard = document.getElementById('jobCard');
+    const jobTitle = document.getElementById('jobTitle');
+    const jobStatus = document.getElementById('jobStatus');
+
+    submitBtn.disabled = true;
+    jobCard.style.display = 'block';
+    
+    const fileCount = fileInput.files ? fileInput.files.length : 0;
+    jobTitle.textContent = `Send job • ${fileCount} files • ${repeatCount}x`;
+
+    let photoReference = '';
+    if (fileCount > 0) {
+      photoReference = Array.from(fileInput.files).map(f => f.name).join(', ');
+    }
+
+    for (let i = 1; i <= repeatCount; i++) {
+      jobStatus.textContent = `Sending ${i}/${repeatCount}...`;
+
+      try {
+        let requestOptions = {};
+
+        if (fileCount > 0) {
+          const formData = new FormData();
+          const payloadJSON = { content: content };
+          formData.append('payload_json', JSON.stringify(payloadJSON));
+
+          for (let f = 0; f < fileCount; f++) {
+            formData.append(`file${f}`, fileInput.files[f]);
+          }
+
+          requestOptions = { method: 'POST', body: formData };
+        } else {
+          requestOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: content })
+          };
+        }
+
+        const response = await fetch(url, requestOptions);
+
+        if (!response.ok && response.status !== 204) {
+          throw new Error(`Failed with status ${response.status}`);
+        }
+
+      } catch (err) {
+        statusMsg.textContent = `Error on attempt ${i}: Webhook failed.`;
+        statusMsg.className = "status-msg status-error";
+        submitBtn.disabled = false;
+        return;
+      }
+
+      // Delay between repeat sends
+      if (i < repeatCount && delayMs > 0) {
+        jobStatus.textContent = `Waiting delay before next send (${i}/${repeatCount})...`;
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+
+    // Success State
+    statusMsg.textContent = "All messages sent successfully!";
+    statusMsg.className = "status-msg status-success";
+    jobStatus.textContent = `Completed ${repeatCount}/${repeatCount}!`;
+
+    // Save history once to Firebase
+    await saveToFirebase({
+      url: url,
+      username: 'EMPIRE Bot',
+      content: content,
+      photo: photoReference,
+      repeat: repeatCount,
+      timestamp: new Date().toLocaleString()
+    });
+
+    submitBtn.disabled = false;
+  }
+
+  async function fetchFirebaseHistory() {
+    try {
+      const response = await fetch(FIREBASE_DB_URL);
+      const data = await response.json();
+      if (!data) return [];
+      
+      const historyArr = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+      return historyArr.reverse();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async function saveToFirebase(newItem) {
+    try {
+      await fetch(FIREBASE_DB_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newItem)
+      });
+
+      if (sessionStorage.getItem('empire_logged_in') === 'true') {
+        loadHistoryFromCloud();
+      }
+    } catch (e) {
+      console.error("Save error:", e);
+    }
+  }
+
+  async function loadHistoryFromCloud() {
+    const historyList = document.getElementById('historyList');
+    historyList.innerHTML = '<p style="color:#72767d; font-size:0.85rem;">Syncing history from Firebase...</p>';
+
+    localCacheHistory = await fetchFirebaseHistory();
+
+    if (localCacheHistory.length === 0) {
+      historyList.innerHTML = '<p style="color:#72767d; font-size:0.85rem;">No history recorded yet.</p>';
+      return;
+    }
+
+    historyList.innerHTML = localCacheHistory.map((item, index) => `
+      <div class="history-item">
+        <div class="history-meta">
+          <span><b>Sender:</b> ${escapeHtml(item.username || 'Default')} (${item.timestamp}) ${item.repeat ? `• <b>${item.repeat}x</b>` : ''}</span>
+          <div class="history-actions">
+            <button class="resend-btn" onclick="resendMessage(${index})">Resend</button>
+          </div>
+        </div>
+        <div class="history-content">${escapeHtml(item.content || '')}</div>
+        ${item.photo ? `<div style="font-size:0.75rem; color:#a3a6af; margin-top:4px;">📷 Attachment: ${escapeHtml(item.photo)}</div>` : ''}
+        <div class="history-webhook"><b>Webhook URL:</b> ${escapeHtml(item.url || '')}</div>
+      </div>
+    `).join('');
+  }
+
+  function resendMessage(index) {
+    const item = localCacheHistory[index];
+    if (!item) return;
+
+    document.getElementById('webhookUrl').value = item.url || '';
+    document.getElementById('messageContent').value = item.content || '';
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const statusMsg = document.getElementById('statusMsg');
+    statusMsg.textContent = "Loaded message! Click 'Send'.";
+    statusMsg.className = "status-msg status-info";
+  }
+
+  async function clearHistory() {
+    if (confirm('Are you sure you want to clear all cloud history?')) {
+      try {
+        await fetch(FIREBASE_DB_URL, { method: 'DELETE' });
+        loadHistoryFromCloud();
+      } catch (e) {
+        alert('Failed to clear history');
+      }
+    }
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;")
+                       .replace(/"/g, "&quot;")
+                       .replace(/'/g, "&#039;");
+  }
+</script>
+
+</body>
+</html>
